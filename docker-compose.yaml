@@ -1,0 +1,43 @@
+
+services:
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    restart: always
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - nginx-proxy-certs:/etc/nginx/certs
+      - nginx-proxy-vhost:/etc/nginx/vhost.d
+      - nginx-proxy-html:/usr/share/nginx/html
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+
+  nginx-proxy-letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    restart: always
+    container_name: nginx-proxy-letsencrypt
+    depends_on:
+      - nginx-proxy
+    volumes_from:
+      - nginx-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - nginx-proxy-letsencrypt-acme:/etc/acme.sh
+
+  web-ssh:
+    image: niruix/sshwifty
+    container_name: web-ssh
+    restart: always
+    environment:
+      - SSHWIFTY_SHAREDKEY=${WEB_SSH_UI_PASSWORD}
+      - VIRTUAL_PORT=8182
+      - VIRTUAL_HOST=${WEB_SSH_DOMAIN}
+      - LETSENCRYPT_HOST=${WEB_SSH_DOMAIN}
+
+
+volumes:
+  nginx-proxy-certs:
+  nginx-proxy-vhost:
+  nginx-proxy-html:
+  nginx-proxy-letsencrypt-acme:
